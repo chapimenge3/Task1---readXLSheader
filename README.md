@@ -11,5 +11,5 @@
 
 ## Output
 
-- ![image](task1/task1.png)
-- ![image](task1/task1res.png)
+- ![image](task1/task1modify.png)
+- ![image](task1/task1resmodify.png)
