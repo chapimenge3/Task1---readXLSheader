@@ -1,5 +1,7 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
+from rest_framework.views import APIView
+from rest_framework.response import Response
 
 
 from django.conf import settings
@@ -22,7 +24,7 @@ def process_excel(file, row_num):
             for cell in row:
                 if cell.value:
                     r[ f'Column{cell.column_letter}' ] = cell.value
-            print(r)
+            # print(r)
             return r
            
     return {}
@@ -93,7 +95,7 @@ def download_file(url):
     # this will grab the filename from the url
     filename = url.split('/')[-1]
 
-    print(f'Downloading {filename}')
+    # print(f'Downloading {filename}')
 
     r = requests.get(url)
     path = os.path.join(settings.BASE_DIR, filename)
@@ -108,24 +110,6 @@ def redirect_home(request):
     return redirect("readXLSheader")
 
 
-
-def renderexcel(request):
-    if request.method == "GET" :
-        return render(request, "index.html")
-    else:
-        url = request.POST.get("link")
-        row_req = 1
-        
-        if request.POST.get("row", None):
-
-            row_req = int(request.POST.get("row"))
-            
-        file = download_file(url)
-        print(file)
-        col = process_excel(file, row_req)
-        
-        
-    return JsonResponse(col)
 
 def analysis(request):
     
@@ -149,7 +133,102 @@ def analysis(request):
         analysed = analays_excel(file, row_req, numrec)
         
     return JsonResponse( {  "ColumnVales" : col , "types" : analysed })
-
-
+from datetime import datetime
+import mysql.connector as mysql
+import json
 def log_to_db(data):
-    pass
+    host = settings.DB_HOST
+    user = settings.DB_USER
+    password = settings.DB_PASS
+    db = settings.DB
+    db_con = mysql.connect(host=host, user=user, database=db, password=password)
+    query = "INSERT INTO XLSHeaderLog_100 (User, EventTime, XLSLink, JsonResult)  VALUES (%s,%s,%s,%s)"
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    user = "1"
+    link = data['link']
+    res = json.dumps(data['res'])
+    val = (user, timestamp, link, res)
+    
+    cursor = db_con.cursor()
+    
+    cursor.execute(query, val) 
+    db_con.commit()
+    
+    return cursor.rowcount
+
+
+from .serializers import ExcelSerializer,ExcelAnalaysisSerializer
+from rest_framework import status
+class Task1(APIView):
+    def get(self, request,):
+        print(request.data)
+        return Response({"data" : "Provide the XML data and use POST request"})
+    
+    def post(self, request, format=None):
+        print(request.data)
+        serializer = ExcelSerializer(data=request.data)
+        if serializer.is_valid():
+            link = request.data.get("file", None)
+            if not link:
+                return Response({"error" : "file is required"}) 
+            
+            row = request.data.get("row", 1)
+            
+            file = download_file(link)
+            print(file)
+            col = process_excel(file, row)
+            
+            return Response(col, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class Task2(APIView):
+    def get(self, request,):
+        print(request.data)
+        return Response({"data" : "Provide the XML data and use POST request"})
+    
+    def post(self, request, format=None):
+        print("TASK 2 ---------------")
+        serializer = ExcelSerializer(data=request.data)
+        if serializer.is_valid():
+            link = request.data.get("file", None)
+            if not link:
+                return Response({"error" : "file is required"}) 
+            
+            row = request.data.get("row", 1)
+            
+            file = download_file(link)
+            # print(file)
+            col = process_excel(file, row)
+            print("Data Inserted ", log_to_db({"link" : link, "res" : col}))
+            return Response(col, status=status.HTTP_200_OK)
+        else:
+            print("INVALID")
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class Task3(APIView):
+    def get(self, request,):
+        return Response({"data" : "Provide the XML data(file, row, row_number) and use POST request"})
+    
+    def post(self, request, format=None):
+        print(request.data)
+        serializer = ExcelAnalaysisSerializer(data=request.data)
+        if serializer.is_valid():
+            link = request.data.get("file", None)
+            if not link:
+                return Response({"error" : "file is required"}) 
+            
+            row = request.data.get("row", 1)
+            numrec = int(request.data.get("row_number", 0))
+            
+            file = download_file(link)
+            print(file)
+            col = process_excel(file, row)
+        
+            analysed = analays_excel(file, row, numrec)
+            return Response({  "ColumnVales" : col , "types" : analysed }, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
