@@ -13,20 +13,20 @@
 
 - after the server started go to [http://localhost:8000/readXLSheader](http://localhost:8000/readXLSheader)
 
-- ![image](task1/task1modify.png)
+- ![image](task1/task1postman.png)
 
-- ![image](task1/task1resmodify.png)
 
 ## TASK 2
 
-- waiting
+- accessible by /task2 endpoint
+
+- ![image](task1/task2postman.png)
+
+- then check the database it will add one additional log
 
 ## TASK 3
 
-- after the server started go to [http://localhost:8000/analysisreadXLSheader](http://localhost:8000/analysisreadXLSheader)
+- after the server started go to [http://localhost:8000/task3](http://localhost:8000/task3)
 
-- ![image](task1/task3.png)
+- ![image](task1/task3postman.png)
 
-- ![image](task1/task3fil.png)
-
-- ![image](task1/task3res.png)
