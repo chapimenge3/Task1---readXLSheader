@@ -9,38 +9,23 @@ import requests
 import openpyxl
 from pathlib import Path
 
-def process_excel(file):
+def process_excel(file, row_num):
     wb_obj = openpyxl.load_workbook(file)
     sheet = wb_obj.active
-    rows = [] 
-    cols = []
-    count = 0 
-    for row in sheet.iter_rows(max_row=6):
-        a = []
-        count += 1
-        for cell in row:
-            if cell.value:
-                a.append(cell.value)
-        if len(a) > 1 :
-            cols = a 
-            break
-    print("Columns ----- " , cols, )
-    
+    r = {}
+    c = 0 
     for row in sheet.iter_rows():
-        if count != 0 :
-            count -= 1
-            continue
-        r = [] 
-        for cell in row:
-            if cell.value:
-                r.append(cell.value) 
-                
-        # if len(r) == len(cols):
-        
-        rows.append(r)
-    
-    print(rows)
-    return cols, rows
+        # if row == row_num :
+        c+=1
+        if c == row_num :
+            
+            for cell in row:
+                if cell.value:
+                    r[ f'Column{cell.column_letter}' ] = cell.value 
+            print(r)
+            return r
+           
+    return {}
 
 def download_file(url):
 
@@ -77,20 +62,6 @@ def renderexcel(request):
             
         file = download_file(url)
         print(file)
-        col, row = process_excel(file)
-        data = []
-        for i in col:
-            print(i, end=" ")
-        print()
-        
-        data = [] 
-        for i in row:
-            d = {}
-            if len(i) < len(col):
-                for j in range(len(col)-len(i)):
-                    i.append(None)
-            for i,j in zip(col, i):
-                d[i] = j
-            data.append(d)
+        col = process_excel(file, row_req)
             
-    return JsonResponse({"columns" : data[:row_req] })
+    return JsonResponse(col)
